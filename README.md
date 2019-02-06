@@ -1,7 +1,7 @@
 Use CloudFormation to deploy.
 
 <td>
-  <a href="https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=WorkSpacesUserPortal&amp;templateURL=cloudformation.yaml" target="_blank">
+  <a href="https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=WorkSpacesUserPortal&amp;templateURL=https://s3-us-west-2.amazonaws.com/debrosse-cloudformation-templates/cloudformation.yaml" target="_blank">
    <span class="inlinemediaobject">
    <img src="https://s3.amazonaws.com/cloudformation-examples/cloudformation-launch-stack.png">
    </span>
