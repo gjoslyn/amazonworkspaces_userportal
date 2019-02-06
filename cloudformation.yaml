@@ -34,6 +34,28 @@ Resources:
                 - !Ref S3Bucket
                 - /*
       Bucket: !Ref S3Bucket
+     
+  RestApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: "constructURIForWorkSpaceUserAPI"
+  BuildURIResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt RestApi.RootResourceId
+      PathPart: "build-uri"
+      RestApiId: !Ref RestApi
+  APIGatewayPOSTMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: "AWS_IAM"
+      HttpMethod: "POST"
+      Integration:
+        Type: "MOCK"
+      OperationName: "build-uri"
+      ResourceId: !Ref BuildURIResource
+      RestApiId: !Ref RestApi
+
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -158,6 +180,8 @@ Resources:
 
       Runtime: python3.6
 Outputs:
+  RootResourceId:
+    Value: !GetAtt RestApi.RootResourceId
   WebsiteURL:
     Value: !GetAtt 
       - S3Bucket
@@ -171,6 +195,3 @@ Outputs:
           - S3Bucket
           - DomainName
     Description: HTTPS URL for website hosted on S3
-    
-
-
