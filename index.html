@@ -1,0 +1,37 @@
+<html>
+  <head><title>WorkSpaces Federated Login Demo</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="shortcut icon" type="image/x-icon" href="favicon.ico"/>
+    <script type="text/javascript" src="https://sdk.amazonaws.com/js/aws-sdk-2.26.0.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.9-1/crypto-js.min.js"></script>
+    <script type="text/javascript" src="underscore.js"></script>
+    <script type="text/javascript" src="sign4.js"></script>
+
+  </head>
+  <body>
+    <div style="text-align:center" id="content">
+    
+      </br>
+      </br>
+      <img src="aws-workspaces-logo.png" alt="WorkSpaces Logo">
+      </br>
+      </br>
+      Username: <input type="text" id="username">
+      </br>
+      </br>
+      <input type="submit" class="buttons" value="Launch WorkSpaces Client" id="launchButton">
+      </br>
+      </br>
+      <label id="messageToUser"></label>
+      </br>
+      </br>
+	  </br>
+    </div>
+      
+    <script src="scripts.js"></script>
+    <script
+      src="https://code.jquery.com/jquery-2.2.4.min.js"
+      integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="
+      crossorigin="anonymous"></script>
+  </body>
+</html>
