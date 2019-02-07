@@ -34,7 +34,19 @@ Resources:
                 - !Ref S3Bucket
                 - /*
       Bucket: !Ref S3Bucket
-     
+
+  CognitoIdentityPool:
+    Type: AWS::Cognito::IdentityPool
+    Properties:
+      IdentityPoolName: "WorkSpacesPortalIdentityPool"
+      AllowUnauthenticatedIdentities: true
+  CognitoIdentityPoolAttachment:
+    Type: AWS::Cognito::IdentityPoolRoleAttachment
+    Properties:
+      IdentityPoolId: !Ref CognitoIdentityPool
+      Roles: 
+        "unauthenticated": !GetAtt UnauthenticatedCognitoIdentityPoolRole.Arn
+   
   RestApi:
     Type: AWS::ApiGateway::RestApi
     Properties:
@@ -72,6 +84,21 @@ Resources:
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/AmazonWorkSpacesAdmin"
         - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  UnauthenticatedCognitoIdentityPoolRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Federated:
+              - "cognito-identity.amazonaws.com"
+          Action:
+            - "sts:AssumeRoleWithWebIdentity"
+      Path: "/"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/AmazonAPIGatewayInvokeFullAccess"
         
   constructWorkSpacesURIForUserFunction:
     Type: AWS::Lambda::Function
