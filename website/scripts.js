@@ -3,7 +3,7 @@ var GET_URI_BUILDER_ENDPOINT = "API GATEWAY HTTPS ENDPOINT"
 // Initialize the Amazon Cognito credentials provider
 AWS.config.region = 'us-west-2'; // Region
 AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-    IdentityPoolId: 'COGNITO POOL ID,
+    IdentityPoolId: 'COGNITO POOL ID',
 });
 
 document.getElementById("launchButton").onclick = function(){
