@@ -1,9 +1,11 @@
-var GET_URI_BUILDER_ENDPOINT = "API GATEWAY HTTPS ENDPOINT"
+const GET_URI_BUILDER_ENDPOINT = configs.APIGatewayUrl;
+const identityPool = configs.identityPool;
+const region = configs.region;
 
 // Initialize the Amazon Cognito credentials provider
-AWS.config.region = 'us-west-2'; // Region
+AWS.config.region = region; // Region
 AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-    IdentityPoolId: 'COGNITO POOL ID',
+    IdentityPoolId: identityPool,
 });
 
 document.getElementById("launchButton").onclick = function(){
@@ -16,7 +18,7 @@ document.getElementById("launchButton").onclick = function(){
 	    
 	    var awsCred = AWS.config.credentials;
 	    var awsCredentials = {
-		    region: 'us-west-2',
+		    region: region,
 		    accessKeyId: awsCred.accessKeyId,
 		    secretAccessKey: awsCred.secretAccessKey,
 		    token: awsCred.sessionToken,

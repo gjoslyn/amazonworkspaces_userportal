@@ -142,6 +142,7 @@ Resources:
             import inspect
             import os
             import urllib.request
+            import mimetypes
 
 
             def lambda_handler(event, context):
@@ -151,7 +152,7 @@ Resources:
                 IDENTITY_POOL = os.environ['IDENTITY_POOL']
                 REGION = os.environ['REGION']
                 API_GW_URL = os.environ['API_GW_URL']
-    
+
                 bucket = s3.Bucket(BUCKET_NAME)
 
                 configData = inspect.cleandoc(""" var configs = {
@@ -165,7 +166,7 @@ Resources:
 
                 key = 'configs.js'
                 bucket.upload_file('/tmp/configs.js', key)
-    
+
                 files = ['index.html',
                          'scripts.js',
                          'sign4.js',
@@ -174,7 +175,7 @@ Resources:
                          'favicon.ico',
                          'aws-workspaces-logo.png'
                          ]
-    
+
                 for file in files:
                     url = "https://raw.githubusercontent.com/sdebrosse/amazonworkspaces_userportal/master/website/"+file
                     print("Downloaded "+url)
@@ -182,19 +183,19 @@ Resources:
                     response = urllib.request.urlopen(url)
 
                     print("Downloaded "+url)
-
+        
                     with open('/tmp/'+file, 'wb') as data:
                         data.write(response.read())
             
-                    bucket.upload_file('/tmp/'+file, file)
-
-    
+                    mimetype, _ = mimetypes.guess_type('/tmp/'+file)
+                    bucket.upload_file('/tmp/'+file, file, ExtraArgs={'ContentType': mimetype})
 
                 # TODO implement
                 return {
                     'statusCode': 200,
                     'body': json.dumps('Hello from Lambda!')
                 }
+
 
       Runtime: python3.6
 
