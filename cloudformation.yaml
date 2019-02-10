@@ -67,6 +67,30 @@ Resources:
       OperationName: "build-uri"
       ResourceId: !Ref BuildURIResource
       RestApiId: !Ref RestApi
+  APIGatewayDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - "APIGatewayPOSTMethod"
+    Properties:
+      RestApiId: !Ref RestApi
+      StageName: "dev"
+
+  DeployWebsiteFunctionLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 
   LambdaExecutionRole:
     Type: AWS::IAM::Role
@@ -99,6 +123,81 @@ Resources:
       Path: "/"
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/AmazonAPIGatewayInvokeFullAccess"
+
+  DeployWebsiteFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.lambda_handler
+      Role: !GetAtt DeployWebsiteFunctionLambdaRole.Arn
+      Environment: 
+        Variables:
+          "IDENTITY_POOL": !Ref CognitoIdentityPool
+          "REGION": !Ref AWS::Region
+          "API_GW_URL": !Sub "https://${RestApi}.execute-api.${AWS::Region}.amazonaws.com/dev"
+          "BUCKET_NAME": !Ref BucketName
+      Code:
+        ZipFile: !Sub |
+            import json
+            import boto3
+            import inspect
+            import os
+            import urllib.request
+
+
+            def lambda_handler(event, context):
+                s3 = boto3.resource('s3')
+
+                BUCKET_NAME = os.environ['BUCKET_NAME']
+                IDENTITY_POOL = os.environ['IDENTITY_POOL']
+                REGION = os.environ['REGION']
+                API_GW_URL = os.environ['API_GW_URL']
+    
+                bucket = s3.Bucket(BUCKET_NAME)
+
+                configData = inspect.cleandoc(""" var configs = {
+                                     'region' : '"""+ REGION +"""',
+                                     'identityPool': '"""+ IDENTITY_POOL +"""',
+                                     'APIGatewayUrl': '"""+ API_GW_URL +"""'
+                                 }""")
+
+                with open('/tmp/configs.js', 'w') as data:
+                    data.write(configData)
+
+                key = 'configs.js'
+                bucket.upload_file('/tmp/configs.js', key)
+    
+                files = ['index.html',
+                         'scripts.js',
+                         'sign4.js',
+                         'styles.css',
+                         'underscore.js',
+                         'favicon.ico',
+                         'aws-workspaces-logo.png'
+                         ]
+    
+                for file in files:
+                    url = "https://raw.githubusercontent.com/sdebrosse/amazonworkspaces_userportal/master/website/"+file
+                    print("Downloaded "+url)
+
+                    response = urllib.request.urlopen(url)
+
+                    print("Downloaded "+url)
+
+                    with open('/tmp/'+file, 'wb') as data:
+                        data.write(response.read())
+            
+                    bucket.upload_file('/tmp/'+file, file)
+
+    
+
+                # TODO implement
+                return {
+                    'statusCode': 200,
+                    'body': json.dumps('Hello from Lambda!')
+                }
+
+      Runtime: python3.6
+
         
   constructWorkSpacesURIForUserFunction:
     Type: AWS::Lambda::Function
@@ -207,6 +306,10 @@ Resources:
 
       Runtime: python3.6
 Outputs:
+  apiGatewayInvokeURL:
+    Value: !Sub "https://${RestApi}.execute-api.${AWS::Region}.amazonaws.com/dev"
+  CognitoIdentityPoolId:
+    Value: !Ref CognitoIdentityPool
   RootResourceId:
     Value: !GetAtt RestApi.RootResourceId
   WebsiteURL:
