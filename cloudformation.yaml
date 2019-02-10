@@ -129,6 +129,7 @@ Resources:
     Properties:
       Handler: index.lambda_handler
       Role: !GetAtt DeployWebsiteFunctionLambdaRole.Arn
+      Timeout: 30
       Environment: 
         Variables:
           "IDENTITY_POOL": !Ref CognitoIdentityPool
