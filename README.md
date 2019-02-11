@@ -8,9 +8,10 @@ Use CloudFormation to deploy.
   </a>
 </td>
 
-
-
+<br>
 The website is hosted in an Amazon S3 bucket. The backend uses API Gateway, Lambda and Cognito (for authentication). A WorkSpaces URI string is built and returned to the user's browser. The WorkSpaces client is automatically launched and the Registration Code and username is automatically filled in.
-
+<br>
 <img src="architecture.png">
 
+<br>
+Clean up: Remove all objects from your S3 bucket. Then delete the CloudFormation stack and all resources will be cleaned up.
