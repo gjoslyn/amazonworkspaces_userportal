@@ -63,7 +63,54 @@ Resources:
       AuthorizationType: "AWS_IAM"
       HttpMethod: "POST"
       Integration:
+        IntegrationHttpMethod: "POST"
+        Type: "AWS_PROXY"
+        Uri: !Sub
+          - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations"
+          - lambdaArn: !GetAtt "constructWorkSpacesURIForUserFunction.Arn"
+        IntegrationResponses:
+          - ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            StatusCode: '200'
+            ResponseTemplates:
+              application/json: ''
+      MethodResponses:
+        - ResponseModels:
+            application/json: Empty
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+          StatusCode: '200'
+      OperationName: "build-uri"
+      ResourceId: !Ref BuildURIResource
+      RestApiId: !Ref RestApi
+
+  APIGatewayOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: "AWS_IAM"
+      HttpMethod: "OPTIONS"
+      Integration:
         Type: "MOCK"
+        IntegrationResponses:
+          - ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            StatusCode: '200'
+            ResponseTemplates:
+              application/json: ''
+      MethodResponses:
+        - ResponseModels:
+            application/json: Empty
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+          StatusCode: '200'
       OperationName: "build-uri"
       ResourceId: !Ref BuildURIResource
       RestApiId: !Ref RestApi
@@ -194,7 +241,7 @@ Resources:
                 # TODO implement
                 return {
                     'statusCode': 200,
-                    'body': json.dumps('Hello from Lambda!')
+                    'body': json.dumps('Finished deploying website to S3')
                 }
 
 
