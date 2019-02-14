@@ -1,4 +1,4 @@
-Use CloudFormation to deploy. After your stack has completed executing, invoke the Lambda Function called "<StackName>.DeployWebsiteFunction" in order to deploy the website from this repository.
+Use CloudFormation to deploy. After your stack has completed executing, invoke the Lambda Function called "\< \<StackName\>.DeployWebsiteFunction" in order to deploy the website from this repository.
 
 <td>
   <a href="https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=WorkSpacesUserPortal&amp;templateURL=https://s3-us-west-2.amazonaws.com/debrosse-cloudformation-templates/cloudformation.yaml" target="_blank">
