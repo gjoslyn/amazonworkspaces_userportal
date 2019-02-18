@@ -1,11 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Parameters:
-  BucketName:
-    Description: Name of the new S3 bucket where the website will be deployed.
-    Type: String
-    MinLength: 3
-    MaxLength: 63
 
 Resources:
 
@@ -96,24 +90,6 @@ Resources:
       RestApiId: !Ref RestApi
       StageName: "dev"
 
-  DeployWebsiteFunctionLambdaRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - lambda.amazonaws.com
-          Action:
-          - sts:AssumeRole
-      Path: "/"
-      ManagedPolicyArns:
-        - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
-        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-        - "arn:aws:iam::aws:policy/AWSDirectoryServiceReadOnlyAccess"
-
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -130,6 +106,8 @@ Resources:
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/AmazonWorkSpacesAdmin"
         - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+        - "arn:aws:iam::aws:policy/AWSDirectoryServiceReadOnlyAccess"
+
   UnauthenticatedCognitoIdentityPoolRole:
     Type: AWS::IAM::Role
     Properties:
@@ -145,84 +123,6 @@ Resources:
       Path: "/"
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/AmazonAPIGatewayInvokeFullAccess"
-
-  DeployWebsiteFunction:
-    Type: AWS::Lambda::Function
-    Properties:
-      Handler: index.lambda_handler
-      Role: !GetAtt DeployWebsiteFunctionLambdaRole.Arn
-      Timeout: 30
-      Environment: 
-        Variables:
-          "IDENTITY_POOL": !Ref CognitoIdentityPool
-          "REGION": !Ref AWS::Region
-          "API_GW_URL": !Sub "https://${RestApi}.execute-api.${AWS::Region}.amazonaws.com/dev"
-          "BUCKET_NAME": !Ref BucketName
-      Code:
-        ZipFile: !Sub |
-            import json
-            import boto3
-            import inspect
-            import os
-            import urllib.request
-            import mimetypes
-
-
-            def lambda_handler(event, context):
-                s3 = boto3.resource('s3')
-
-                BUCKET_NAME = os.environ['BUCKET_NAME']
-                IDENTITY_POOL = os.environ['IDENTITY_POOL']
-                REGION = os.environ['REGION']
-                API_GW_URL = os.environ['API_GW_URL']
-
-                bucket = s3.Bucket(BUCKET_NAME)
-
-                configData = inspect.cleandoc(""" var configs = {
-                                     'region' : '"""+ REGION +"""',
-                                     'identityPool': '"""+ IDENTITY_POOL +"""',
-                                     'APIGatewayUrl': '"""+ API_GW_URL +"""'
-                                 }""")
-
-                with open('/tmp/configs.js', 'w') as data:
-                    data.write(configData)
-
-                key = 'configs.js'
-                bucket.upload_file('/tmp/configs.js', key)
-
-                files = ['index.html',
-                         'scripts.js',
-                         'sign4.js',
-                         'styles.css',
-                         'underscore.js',
-                         'favicon.ico',
-                         'aws-workspaces-logo.png',
-                         'launch.php'
-                         ]
-
-                for file in files:
-                    url = "https://raw.githubusercontent.com/sdebrosse/amazonworkspaces_userportal/teradici_client/website/"+file
-                    print("Downloaded "+url)
-
-                    response = urllib.request.urlopen(url)
-
-                    print("Downloaded "+url)
-        
-                    with open('/tmp/'+file, 'wb') as data:
-                        data.write(response.read())
-            
-                    mimetype, _ = mimetypes.guess_type('/tmp/'+file)
-                    bucket.upload_file('/tmp/'+file, file, ExtraArgs={'ContentType': mimetype})
-
-                # TODO implement
-                return {
-                    'statusCode': 200,
-                    'body': json.dumps('Finished deploying website to S3')
-                }
-
-
-      Runtime: python3.6
-
         
   retrievePCMEndpointForUser:
     Type: AWS::Lambda::Function
