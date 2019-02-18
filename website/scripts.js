@@ -42,7 +42,7 @@ document.getElementById("launchButton").onclick = function(){
 			  var pcm_url = response['pcm_url']; 
 	                  // Redirect to the WorkSpaces URI
     			  document.getElementById('messageToUser').innerHTML = 'Opening WorkSpace client for user '+username;
-			  window.location.href = 'http://workspaces.lacounty.isd.gov/launch.php?username='+username+'&pcmurl='+pcm_url
+			  window.location.href = 'http://localhost/launch.php?username='+username+'&pcmurl='+pcm_url
                           //response['uri'];	
 			}
 		  }
