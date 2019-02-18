@@ -41,7 +41,7 @@ Resources:
         Type: "AWS_PROXY"
         Uri: !Sub
           - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations"
-          - lambdaArn: !GetAtt "constructWorkSpacesURIForUserFunction.Arn"
+          - lambdaArn: !GetAtt "retrievePCMEndpointForUser.Arn"
         IntegrationResponses:
           - ResponseParameters:
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
