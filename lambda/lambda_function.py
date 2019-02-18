@@ -1,10 +1,31 @@
 import json
 import boto3
 import sys
+import os
 
-client = boto3.client('workspaces', region_name='us-west-2')
+client = boto3.client('workspaces', region_name='us-east-1')
+ds_client = boto3.client('ds', region_name='us-east-1')
 
+#In this function, we return the PCM URL tag for a Directory (given its ID)
+def get_pcm_url_for_directory(directoryID):
 
+    tag_name = os.environ['PCM_URL_TAG_NAME']    
+    
+    tags = ds_client.list_tags_for_resource(
+        ResourceId=directoryID
+    )
+    
+    if(len(tags["Tags"])<1):
+        return "";
+    
+    # Get first key, value pair which matches our Key value
+    pcm_tag = next((tag for tag in tags["Tags"] if tag.get('Key') == tag_name), None)
+    
+    print("URL is "+pcm_tag["Value"])
+    
+    return pcm_tag["Value"]
+    
+    
 def get_dir_id_and_regcode_for_user(username, list_of_directories):
 
 # In this function, we return the first directory ID/reg code that has a workspace for the user
@@ -27,21 +48,7 @@ def get_dir_id_and_regcode_for_user(username, list_of_directories):
             print("There was an error when calling directory " + directory[0])
             print("Unexpected error:", sys.exc_info()[0])
 
-    directoryID = "test"
-    regCode = "test"
-
     return []
-
-
-def get_mfa_code_for_user():
-
-    return "123231"
-
-def construct_workspace_uri(username, directoryID, regCode,mfa_otp):
-    uri = "workspaces://"+username+"@"+regCode+"?MFACode="+mfa_otp
-    #uri = "workspaces://"+username+"@"+regCode
-
-    return uri
 
 def get_list_of_workspace_directories():
 
@@ -82,16 +89,21 @@ def lambda_handler(event, context):
         } 
     
     users_directory = get_dir_id_and_regcode_for_user(username,list_of_directories)
+    directoryID = users_directory[0];
+    regCode = users_directory[1];
     
-    print("Directory for user "+username+" is "+users_directory[0])
-    print("Reg Code for user "+username+" is "+users_directory[1])
+    print("Directory for user "+username+" is " + directoryID)
+    print("Reg Code for user "+username+" is " + regCode)
     
+    pcm_url = get_pcm_url_for_directory(directoryID)
     
-    uri = construct_workspace_uri(username, users_directory[0], users_directory[1],"123121")
-    
-    print(uri)
+    if(pcm_url == ""):
+        return {
+            "statusCode": 500,
+            "errorMessage" : "PCM tag not set for directory "+directoryID+". Please inform WorkSpaces administrator."
+        } 
     
     return {
         "statusCode": 200,
-        "uri": uri
+        "pcm_url": pcm_url
     }

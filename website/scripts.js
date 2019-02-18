@@ -25,7 +25,7 @@ document.getElementById("launchButton").onclick = function(){
 		};
 
 		$.ajax(Signer(awsCredentials, {
-		  url: GET_URI_BUILDER_ENDPOINT + '/build-uri',
+		  url: GET_URI_BUILDER_ENDPOINT + '/pcm-url',
 		  type: 'POST',
 		  dataType: 'json',
 		  contentType: 'application/json',
@@ -37,10 +37,13 @@ document.getElementById("launchButton").onclick = function(){
     			document.getElementById('messageToUser').innerHTML = response['errorMessage'];
 			}
 			
-			if("uri" in response){
-				// Redirect to the WorkSpaces URI
-    			document.getElementById('messageToUser').innerHTML = 'Opening WorkSpace client for user '+username;
-				window.location.href = response['uri'];	
+			if("pcm_url" in response){
+
+			  var pcm_url = response['pcm_url']; 
+	                  // Redirect to the WorkSpaces URI
+    			  document.getElementById('messageToUser').innerHTML = 'Opening WorkSpace client for user '+username;
+			  window.location.href = 'http://workspaces.lacounty.isd.gov/launch.php?username='+username+'&pcmurl='+pcm_url
+                          //response['uri'];	
 			}
 		  }
 		}));
