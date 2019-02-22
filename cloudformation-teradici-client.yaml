@@ -18,12 +18,12 @@ Resources:
   RestApi:
     Type: AWS::ApiGateway::RestApi
     Properties:
-      Name: "constructURIForWorkSpaceUserAPI"
-  BuildURIResource:
+      Name: "retrievePCMEndpointForUser"
+  PCMURLResource:
     Type: AWS::ApiGateway::Resource
     Properties:
       ParentId: !GetAtt RestApi.RootResourceId
-      PathPart: "build-uri"
+      PathPart: "pcm-url"
       RestApiId: !Ref RestApi
   APIGatewayPOSTMethod:
     Type: AWS::ApiGateway::Method
@@ -52,8 +52,8 @@ Resources:
             method.response.header.Access-Control-Allow-Methods: true
             method.response.header.Access-Control-Allow-Origin: true
           StatusCode: '200'
-      OperationName: "build-uri"
-      ResourceId: !Ref BuildURIResource
+      OperationName: "pcm-url"
+      ResourceId: !Ref PCMURLResource
       RestApiId: !Ref RestApi
 
   APIGatewayOptionsMethod:
@@ -79,8 +79,8 @@ Resources:
             method.response.header.Access-Control-Allow-Methods: true
             method.response.header.Access-Control-Allow-Origin: true
           StatusCode: '200'
-      OperationName: "build-uri"
-      ResourceId: !Ref BuildURIResource
+      OperationName: "pcm-url"
+      ResourceId: !Ref PCMURLResource
       RestApiId: !Ref RestApi
   APIGatewayDeployment:
     Type: AWS::ApiGateway::Deployment
@@ -127,6 +127,9 @@ Resources:
   retrievePCMEndpointForUser:
     Type: AWS::Lambda::Function
     Properties:
+      Environment:
+        Variables:
+          "PCM_URL_TAG_NAME": "PCM"
       Handler: index.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Code:
@@ -136,8 +139,8 @@ Resources:
             import sys
             import os
 
-            client = boto3.client('workspaces', region_name='us-east-1')
-            ds_client = boto3.client('ds', region_name='us-east-1')
+            client = boto3.client('workspaces', region_name='${AWS::Region}')
+            ds_client = boto3.client('ds', region_name='${AWS::Region}')
 
             #In this function, we return the PCM URL tag for a Directory (given its ID)
             def get_pcm_url_for_directory(directoryID):
@@ -248,5 +251,3 @@ Outputs:
     Value: !Sub "https://${RestApi}.execute-api.${AWS::Region}.amazonaws.com/dev"
   CognitoIdentityPoolId:
     Value: !Ref CognitoIdentityPool
-  RootResourceId:
-    Value: !GetAtt RestApi.RootResourceId
