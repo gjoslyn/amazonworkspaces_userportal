@@ -7,3 +7,7 @@ Use CloudFormation to deploy. After your stack has completed executing, 1) Insta
    </span>
   </a>
 </td>
+
+<br>
+<img src="architecture.png">
+<br>
