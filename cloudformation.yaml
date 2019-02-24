@@ -91,10 +91,12 @@ Resources:
   APIGatewayOptionsMethod:
     Type: AWS::ApiGateway::Method
     Properties:
-      AuthorizationType: "AWS_IAM"
+      AuthorizationType: "NONE"
       HttpMethod: "OPTIONS"
       Integration:
         Type: "MOCK"
+        RequestTemplates:
+          "application/json": "{\n    \"statusCode\": 200 \n}"
         IntegrationResponses:
           - ResponseParameters:
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
