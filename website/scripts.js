@@ -37,10 +37,13 @@ document.getElementById("launchButton").onclick = function(){
     			document.getElementById('messageToUser').innerHTML = response['errorMessage'];
 			}
 			
-			if("uri" in response){
-				// Redirect to the WorkSpaces URI
+			if("uri" in response && 
+			    response.directories.length == 1){	
+			    // Redirect to the WorkSpaces URI
     			document.getElementById('messageToUser').innerHTML = 'Opening WorkSpace client for user '+username;
 				window.location.href = response['uri'];	
+			} else if ( response.directories.length > 1) {
+			    alert("Multiple Directories Found! Pick one.");
 			}
 		  }
 		}));
