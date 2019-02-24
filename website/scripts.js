@@ -35,9 +35,7 @@ document.getElementById("launchButton").onclick = function(){
 			if ("errorMessage" in response){
 				//alert("error from API");
     			document.getElementById('messageToUser').innerHTML = response['errorMessage'];
-			}
-			
-			if("uri" in response && 
+			} else if("uri" in response && 
 			    response.directories.length == 1){	
 			    // Redirect to the WorkSpaces URI
     			document.getElementById('messageToUser').innerHTML = 'Opening WorkSpace client for user '+username;
@@ -45,6 +43,7 @@ document.getElementById("launchButton").onclick = function(){
 			} else if ( response.directories.length > 1) {
 			    alert("Multiple Directories Found! Pick one.");
 			}
+			
 		  }
 		}));
 	});
