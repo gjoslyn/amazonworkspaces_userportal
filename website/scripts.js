@@ -35,11 +35,11 @@ document.getElementById("launchButton").onclick = function(){
 			if ("errorMessage" in response){
 				//alert("error from API");
     			document.getElementById('messageToUser').innerHTML = response['errorMessage'];
-			} else if("uri" in response && 
+			} else if("directoryID" in response && 
 			    response.directories.length == 1){	
 			    // Redirect to the WorkSpaces URI
     			document.getElementById('messageToUser').innerHTML = 'Opening WorkSpace client for user '+username;
-				window.location.href = response['uri'];	
+				window.location.href = response['directories'][0]['uri'];	
 			} else if ( response.directories.length > 1) {
 			    alert("Multiple Directories Found! Pick one.");
 			}

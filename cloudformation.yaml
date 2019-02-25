@@ -286,7 +286,13 @@ Resources:
                     "statusCode": 500,
                     "errorMessage" : message
                 } 
+                
+            def construct_workspaces_uri(username, directoryID, regCode):
+                uri = "workspaces://"+username+"@"+regCode+"?MFACode="
+                #uri = "workspaces://"+username+"@"+regCode
 
+                return uri
+                
             # In this function, we return the PCM URL tag for a Directory (given its ID)
             # This may be useful to include in the response if you've deployed Teradici PCM
             # for use with Teradici Zero Clients.
@@ -358,8 +364,10 @@ Resources:
                             regCode = directory["RegistrationCode"]
                             pcm_url = get_pcm_url_for_directory(directoryID)
                             name_tag = get_name_tag_for_directory(directoryID)
+                            uri = construct_workspaces_uri(username, directoryID, regCode)
+                    
                             workspaces_info_for_user.append({'directoryID':directoryID,'regCode':regCode, 
-                                                            'pcm_url':pcm_url, 'name':name_tag})
+                                                            'pcm_url':pcm_url, 'name':name_tag, 'uri':uri })
                         else:
                             print("No WorkSpaces for user "+username+" in directory " + directoryID)
                     except:
