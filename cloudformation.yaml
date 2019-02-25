@@ -288,7 +288,7 @@ Resources:
                 } 
                 
             def construct_workspaces_uri(username, directoryID, regCode):
-                uri = "workspaces://"+username+"@"+regCode+"?MFACode="
+                uri = "workspaces://"+username+"@"+regCode
                 #uri = "workspaces://"+username+"@"+regCode
 
                 return uri

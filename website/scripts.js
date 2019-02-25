@@ -11,6 +11,9 @@ AWS.config.credentials = new AWS.CognitoIdentityCredentials({
 document.getElementById("launchButton").onclick = function(){
 
 	document.getElementById('messageToUser').innerHTML = "";
+	document.getElementById('resultsTable').innerHTML = "";
+
+	
 	var username = $('#username').val();
 
 	AWS.config.credentials.get(function(err) {
@@ -35,13 +38,36 @@ document.getElementById("launchButton").onclick = function(){
 			if ("errorMessage" in response){
 				//alert("error from API");
     			document.getElementById('messageToUser').innerHTML = response['errorMessage'];
-			} else if("directoryID" in response && 
+			} else if("directories" in response && 
 			    response.directories.length == 1){	
 			    // Redirect to the WorkSpaces URI
     			document.getElementById('messageToUser').innerHTML = 'Opening WorkSpace client for user '+username;
 				window.location.href = response['directories'][0]['uri'];	
 			} else if ( response.directories.length > 1) {
-			    alert("Multiple Directories Found! Pick one.");
+			    
+			    document.getElementById('messageToUser').innerHTML = "Multiple WorkSpaces found! Pick one below.";
+			    var resultsTable = document.getElementById("resultsTable");
+			    var header = resultsTable.createTHead();
+			    var row = header.insertRow();
+
+			    var directoryIDHeader = row.insertCell(0);
+			    var regCodeHeader = row.insertCell(1);
+			    directoryIDHeader.innerHTML = "<b>Directory ID</b>";
+			    regCodeHeader.innerHTML = "<b>Registration Code</b>";
+
+			    for (i in response.directories) {
+			      var row = resultsTable.insertRow();
+			      var directoryID = row.insertCell(0);
+			      var registrationCode = row.insertCell(1);
+			      var launchURI = row.insertCell(2);
+			      
+			      directoryID.innerHTML = response.directories[i]["directoryID"];
+			      registrationCode.innerHTML = response.directories[i]["regCode"];
+			      launchURI.innerHTML = "<a href="+response.directories[i]["uri"]+">Launch</a>";
+
+			    }
+			    
+			    
 			}
 			
 		  }
