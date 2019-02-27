@@ -1,8 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-
 Resources:
-
   CognitoIdentityPool:
     Type: AWS::Cognito::IdentityPool
     Properties:
@@ -18,12 +16,12 @@ Resources:
   RestApi:
     Type: AWS::ApiGateway::RestApi
     Properties:
-      Name: "retrievePCMEndpointForUser"
-  PCMURLResource:
+      Name: "getWorkSpacesInfoForUser"
+  BuildURIResource:
     Type: AWS::ApiGateway::Resource
     Properties:
       ParentId: !GetAtt RestApi.RootResourceId
-      PathPart: "pcm-url"
+      PathPart: "build-uri"
       RestApiId: !Ref RestApi
   APIGatewayPOSTMethod:
     Type: AWS::ApiGateway::Method
@@ -32,10 +30,10 @@ Resources:
       HttpMethod: "POST"
       Integration:
         IntegrationHttpMethod: "POST"
-        Type: "AWS_PROXY"
+        Type: "AWS"
         Uri: !Sub
           - "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations"
-          - lambdaArn: !GetAtt "retrievePCMEndpointForUser.Arn"
+          - lambdaArn: !GetAtt "getWorkSpacesInfoForUserFunction.Arn"
         IntegrationResponses:
           - ResponseParameters:
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
@@ -52,17 +50,19 @@ Resources:
             method.response.header.Access-Control-Allow-Methods: true
             method.response.header.Access-Control-Allow-Origin: true
           StatusCode: '200'
-      OperationName: "pcm-url"
-      ResourceId: !Ref PCMURLResource
+      OperationName: "build-uri"
+      ResourceId: !Ref BuildURIResource
       RestApiId: !Ref RestApi
 
   APIGatewayOptionsMethod:
     Type: AWS::ApiGateway::Method
     Properties:
-      AuthorizationType: "AWS_IAM"
+      AuthorizationType: "NONE"
       HttpMethod: "OPTIONS"
       Integration:
         Type: "MOCK"
+        RequestTemplates:
+          "application/json": "{\n    \"statusCode\": 200 \n}"
         IntegrationResponses:
           - ResponseParameters:
               method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
@@ -79,8 +79,8 @@ Resources:
             method.response.header.Access-Control-Allow-Methods: true
             method.response.header.Access-Control-Allow-Origin: true
           StatusCode: '200'
-      OperationName: "pcm-url"
-      ResourceId: !Ref PCMURLResource
+      OperationName: "build-uri"
+      ResourceId: !Ref BuildURIResource
       RestApiId: !Ref RestApi
   APIGatewayDeployment:
     Type: AWS::ApiGateway::Deployment
@@ -89,7 +89,17 @@ Resources:
     Properties:
       RestApiId: !Ref RestApi
       StageName: "dev"
-
+     
+  ConfigLambdaPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+    - RestApi
+    - getWorkSpacesInfoForUserFunction
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref getWorkSpacesInfoForUserFunction
+      Principal: apigateway.amazonaws.com
+      
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -107,7 +117,7 @@ Resources:
         - "arn:aws:iam::aws:policy/AmazonWorkSpacesAdmin"
         - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
         - "arn:aws:iam::aws:policy/AWSDirectoryServiceReadOnlyAccess"
-
+        
   UnauthenticatedCognitoIdentityPoolRole:
     Type: AWS::IAM::Role
     Properties:
@@ -123,14 +133,16 @@ Resources:
       Path: "/"
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/AmazonAPIGatewayInvokeFullAccess"
-        
-  retrievePCMEndpointForUser:
+
+  getWorkSpacesInfoForUserFunction:
     Type: AWS::Lambda::Function
     Properties:
+      Handler: index.lambda_handler
+      Timeout: 10
       Environment:
         Variables:
-          "PCM_URL_TAG_NAME": "PCM"
-      Handler: index.lambda_handler
+          "PCM_URL_TAG": "PCM"
+          "NAME_TAG": "NAME"
       Role: !GetAtt LambdaExecutionRole.Arn
       Code:
         ZipFile: !Sub |
@@ -142,108 +154,122 @@ Resources:
             client = boto3.client('workspaces', region_name='${AWS::Region}')
             ds_client = boto3.client('ds', region_name='${AWS::Region}')
 
-            #In this function, we return the PCM URL tag for a Directory (given its ID)
+            def build_error_response(message):
+                return {
+                    "statusCode": 500,
+                    "errorMessage" : message
+                } 
+                
+            def construct_workspaces_uri(username, directoryID, regCode):
+                uri = "workspaces://"+username+"@"+regCode
+                #uri = "workspaces://"+username+"@"+regCode
+
+                return uri
+                
+            # In this function, we return the PCM URL tag for a Directory (given its ID)
+            # This may be useful to include in the response if you've deployed Teradici PCM
+            # for use with Teradici Zero Clients.
             def get_pcm_url_for_directory(directoryID):
 
-                tag_name = os.environ['PCM_URL_TAG_NAME']    
-    
+                tag_name = os.environ['PCM_URL_TAG']    
+
                 tags = ds_client.list_tags_for_resource(
                     ResourceId=directoryID
                 )
-    
+
                 if(len(tags["Tags"])<1):
                     return "";
-    
+
                 # Get first key, value pair which matches our Key value
                 pcm_tag = next((tag for tag in tags["Tags"] if tag.get('Key') == tag_name), None)
-    
-                print("URL is "+pcm_tag["Value"])
-    
-                return pcm_tag["Value"]
-    
-    
-            def get_dir_id_and_regcode_for_user(username, list_of_directories):
 
-            # In this function, we return the first directory ID/reg code that has a workspace for the user
+                # If the PCM tag has not been set, pcm_tag will be empty. Checking that here.
+                if pcm_tag:
+                    return pcm_tag["Value"]
+                else:
+                    return ""
+
+            # In this function, we return the NAME tag for a Directory (given its ID)
+            # This may be useful to include in the response if there are multiple directories
+            # which contain a WorkSpace for the user. This will make it easier for the user to 
+            # understand what each directory is and which WorkSpace to pick.
+
+            def get_name_tag_for_directory(directoryID):
+
+                tag_name = os.environ['NAME_TAG']    
+
+                tags = ds_client.list_tags_for_resource(
+                    ResourceId=directoryID
+                )
+
+                if(len(tags["Tags"])<1):
+                    return "";
+
+                # Get first key, value pair which matches our Key value
+                name = next((tag for tag in tags["Tags"] if tag.get('Key') == tag_name), None)
+
+                # If the NAME tag has not been set, it will be empty. Checking that here.
+                if name:
+                    return name["Value"]
+                else:
+                    return ""
+
+
+            def get_workspaces_info_for_user(username, list_of_directories):
+
+            # In this function, we return the Directory ID, Reg Code and PCM URL for each
+            # Directory that has a workspace for the user
+
+                workspaces_info_for_user = [];
 
                 for directory in list_of_directories:
+                    directoryID = directory["DirectoryId"]
                     try:
-                        print("Checking directory "+directory[0])
+                        print("Checking directory " + directoryID)
                         response = client.describe_workspaces(
-                            DirectoryId=directory[0],
+                            DirectoryId=directoryID,
                             UserName=username
                         )
-                        #print(response)
-                        #print(len(response["Workspaces"]))
+
                         if(len(response["Workspaces"]) > 0):
                             print("Found a workspace!")
-                            return [directory[0], directory[1]]
+
+                            regCode = directory["RegistrationCode"]
+                            pcm_url = get_pcm_url_for_directory(directoryID)
+                            name_tag = get_name_tag_for_directory(directoryID)
+                            uri = construct_workspaces_uri(username, directoryID, regCode)
+                    
+                            workspaces_info_for_user.append({'directoryID':directoryID,'regCode':regCode, 
+                                                            'pcm_url':pcm_url, 'name':name_tag, 'uri':uri })
                         else:
-                            print("No WorkSpaces for user "+username+" in directory " + directory[0])
+                            print("No WorkSpaces for user "+username+" in directory " + directoryID)
                     except:
-                        print("There was an error when calling directory " + directory[0])
+                        print("There was an error when calling directory " + directoryID)
                         print("Unexpected error:", sys.exc_info()[0])
 
-                return []
-
-            def get_list_of_workspace_directories():
-
-                # Get a list of all workspaces in the directory
-                response = client.describe_workspace_directories()
-                directories = []
-
-                for directory in response["Directories"]:
-                    directoryID = directory["DirectoryId"]
-                    regCode = directory["RegistrationCode"]
-
-                    #Appends a tuple to the directories list. Each tuple contains the directory ID and reg code.
-                    directories.append([directoryID,regCode])
-
-                #print ("Directories found: "+str(len(directories)))
-                return directories
-
+                return workspaces_info_for_user
 
             def lambda_handler(event, context):
-                # TODO implement
-    
+                workspaces_info_for_user = [];
                 username = event["username"]
-
-                list_of_directories = get_list_of_workspace_directories()
     
+                if(username == ""):
+                    return build_error_response("Provided username is invalid.") 
+
+                list_of_directories = client.describe_workspace_directories()["Directories"]
+
                 if(len(list_of_directories) < 1):
-                    return {
-                        "statusCode": 500,
-                        "errorMessage" : "No registered Directories found in your account."
-                    } 
-    
-                users_directory = get_dir_id_and_regcode_for_user(username,list_of_directories)
+                    return build_error_response("No registered Directories found in your account.")
 
-                if(len(users_directory) < 1):
-                    return {
-                        "statusCode": 500,
-                        "errorMessage" : "No WorkSpaces Found for user "+username
-                    } 
+                directories = get_workspaces_info_for_user(username,list_of_directories)
     
-                users_directory = get_dir_id_and_regcode_for_user(username,list_of_directories)
-                directoryID = users_directory[0];
-                regCode = users_directory[1];
-    
-                print("Directory for user "+username+" is " + directoryID)
-                print("Reg Code for user "+username+" is " + regCode)
-    
-                pcm_url = get_pcm_url_for_directory(directoryID)
-    
-                if(pcm_url == ""):
-                    return {
-                        "statusCode": 500,
-                        "errorMessage" : "PCM tag not set for directory "+directoryID+". Please inform WorkSpaces administrator."
-                    } 
-    
+                if(len(directories) < 1):
+                    return build_error_response("No WorkSpaces Found for user "+username)
+
                 return {
                     "statusCode": 200,
-                    "pcm_url": pcm_url
+                    "directories": directories
                 }
-
 
       Runtime: python3.6
 Outputs:
