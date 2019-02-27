@@ -1,20 +1,19 @@
-<a href="http://localhost">
+<a href="..">
    <button>Back</button>
 </a>
 
 <?php
-//echo exec('whoami');
 
 $username = $_GET["username"];
 $pcmurl = $_GET["pcmurl"];
-//echo $pcm-url;
 
-$cmd = `export DISPLAY=:0; pcoip-client -fullscreen -b $pcmurl -u $username`;
+$cmd = 'export DISPLAY=:0; pcoip-client -fullscreen=true -b '.escapeshellarg($pcmurl);
+$cmd .= ' -u '.escapeshellarg($username);
 
-//exec('bash -c "exec nohup setsid $cmd > /dev/null 2>&1 &"');
-exec('nohup ' . $cmd . ' >> /dev/null 2>&1 & echo $!', $pid);
+//exec('nohup ' . $cmd . ' >> /dev/null 2>&1 & echo $!', $pid);
 
-header("Location: ".$_SERVER['HTTP_REFERER'])
+exec("$cmd 2>&1 &", $output, $return_var);
+header("Location: ".$_SERVER['HTTP_REFERER']);
 
 ?>
 

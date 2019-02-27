@@ -42,7 +42,7 @@ document.getElementById("launchButton").onclick = function(){
 			    response.directories.length == 1){	
 			    // Redirect to the WorkSpaces URI
     			document.getElementById('messageToUser').innerHTML = 'Opening WorkSpace client for user '+username;
-				window.location.href = './launch.php?username='+username+'&pcmurl='+response.directories[i]["pcm_url"];	
+				window.location.href = './launch.php?username='+username+'&pcmurl='+response.directories[0]["pcm_url"];	
 			} else if ( response.directories.length > 1) {
 			    
 			    document.getElementById('messageToUser').innerHTML = "Multiple WorkSpaces found! Pick one below.";
