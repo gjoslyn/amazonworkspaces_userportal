@@ -42,7 +42,7 @@ document.getElementById("launchButton").onclick = function(){
 			    response.directories.length == 1){	
 			    // Redirect to the WorkSpaces URI
     			document.getElementById('messageToUser').innerHTML = 'Opening WorkSpace client for user '+username;
-				window.location.href = response['directories'][0]['uri'];	
+				window.location.href = './launch.php?username='+username+'&pcmurl='+response.directories[i]["pcm_url"];	
 			} else if ( response.directories.length > 1) {
 			    
 			    document.getElementById('messageToUser').innerHTML = "Multiple WorkSpaces found! Pick one below.";
@@ -63,11 +63,19 @@ document.getElementById("launchButton").onclick = function(){
 			      
 			      directoryID.innerHTML = response.directories[i]["directoryID"];
 			      registrationCode.innerHTML = response.directories[i]["regCode"];
-			      pcm_url
+			      var pcm_url = response.directories[i]["pcm_url"]
 			      
-			      var redirectionURL = './launch.php?username='+username+'&pcmurl='+response.directories[i]["pcm_url"]
-			      launchURI.innerHTML = "<a href="+redirectionURL+">Launch</a>";
-
+			      //If PCM tag not set for directory, display "N/A" where the launch button should be.
+			      if (pcm_url == "" ) {
+			        launchURI.innerHTML = "N/A";
+			        
+			      }
+			      else {
+			        var redirectionURL = './launch.php?username='+username+'&pcmurl='+pcm_url
+			        launchURI.innerHTML = "<a href="+redirectionURL+">Launch</a>";
+			      
+			      }
+			      
 			    }
 			    
 			    
