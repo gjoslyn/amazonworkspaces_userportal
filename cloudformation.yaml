@@ -6,6 +6,11 @@ Parameters:
     Type: String
     MinLength: 3
     MaxLength: 63
+  WhitelistedIPBlock:
+    AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
+    Default: 0.0.0.0/0
+    Description: IP Range or IP to whitelist for access to your website (e.g. 0.0.0.0/0 will allow access to all)
+    Type: String
 
 Resources:
   S3Bucket:
@@ -28,6 +33,10 @@ Resources:
             Effect: Allow
             Principal: '*'
             Action: 's3:GetObject'
+            Condition:
+                IpAddress:
+                    aws:SourceIp:
+                      - !Ref WhitelistedIPBlock
             Resource: !Join 
               - ''
               - - 'arn:aws:s3:::'
