@@ -132,6 +132,38 @@ Resources:
     Properties:
       RestApiId: !Ref RestApi
       StageName: "dev"
+   
+  UserCacheDynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+      - AttributeName: "directory_id"
+        AttributeType: "S"
+      KeySchema:
+      - AttributeName: "directory_id"
+        KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      TimeToLiveSpecification:
+        AttributeName: "expiration_time"
+        Enabled: true
+        
+  DirectoryCacheDynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+      - AttributeName: "username"
+        AttributeType: "S"
+      KeySchema:
+      - AttributeName: "username"
+        KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      TimeToLiveSpecification:
+        AttributeName: "expiration_time"
+        Enabled: true
 
   DeployWebsiteFunctionLambdaRole:
     Type: AWS::IAM::Role
@@ -149,6 +181,7 @@ Resources:
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
         - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+        - "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
         
   ConfigLambdaPermission:
     Type: AWS::Lambda::Permission
