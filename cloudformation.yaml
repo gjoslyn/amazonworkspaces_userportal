@@ -181,7 +181,6 @@ Resources:
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
         - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
-        - "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
         
   ConfigLambdaPermission:
     Type: AWS::Lambda::Permission
@@ -210,6 +209,7 @@ Resources:
         - "arn:aws:iam::aws:policy/AmazonWorkSpacesAdmin"
         - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
         - "arn:aws:iam::aws:policy/AWSDirectoryServiceReadOnlyAccess"
+        - "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
         
   UnauthenticatedCognitoIdentityPoolRole:
     Type: AWS::IAM::Role
