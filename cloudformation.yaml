@@ -11,7 +11,6 @@ Parameters:
     Default: 0.0.0.0/0
     Description: IP Range or IP to whitelist for access to your website (e.g. 0.0.0.0/0 will allow access to all)
     Type: String
-
 Resources:
   S3Bucket:
     Type: AWS::S3::Bucket
@@ -227,6 +226,12 @@ Resources:
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/AmazonAPIGatewayInvokeFullAccess"
 
+  DeployWebsite:
+    Type: Custom::DeployWebsite
+    Properties:
+      ServiceToken: !GetAtt DeployWebsiteFunction.Arn
+
+        
   DeployWebsiteFunction:
     Type: AWS::Lambda::Function
     Properties:
@@ -241,6 +246,7 @@ Resources:
           "BUCKET_NAME": !Ref BucketName
       Code:
         ZipFile: !Sub |
+            from botocore.vendored import requests
             import json
             import boto3
             import inspect
@@ -248,16 +254,26 @@ Resources:
             import urllib.request
             import mimetypes
 
+            SUCCESS = "SUCCESS"
+            FAILED = "FAILED"
 
             def lambda_handler(event, context):
-                s3 = boto3.resource('s3')
 
+                print(event)
+    
+                s3 = boto3.resource('s3')
+    
                 BUCKET_NAME = os.environ['BUCKET_NAME']
                 IDENTITY_POOL = os.environ['IDENTITY_POOL']
                 REGION = os.environ['REGION']
                 API_GW_URL = os.environ['API_GW_URL']
 
                 bucket = s3.Bucket(BUCKET_NAME)
+    
+                if event['RequestType'] == 'Delete':
+                    bucket.objects.all().delete()
+                    return send(event, context, 'SUCCESS', {'Success': 'Website deleted from bucket'})
+
 
                 configData = inspect.cleandoc(""" var configs = {
                                      'region' : '"""+ REGION +"""',
@@ -287,19 +303,47 @@ Resources:
                     response = urllib.request.urlopen(url)
 
                     print("Downloaded "+url)
-        
+
                     with open('/tmp/'+file, 'wb') as data:
                         data.write(response.read())
-            
+
                     mimetype, _ = mimetypes.guess_type('/tmp/'+file)
                     bucket.upload_file('/tmp/'+file, file, ExtraArgs={'ContentType': mimetype})
 
                 # TODO implement
-                return {
-                    'statusCode': 200,
-                    'body': json.dumps('Finished deploying website to S3')
+                return send(event, context, 'SUCCESS', {'Success': 'Website deployed to S3 bucket'})
+    
+            def send(event, context, responseStatus, responseData, physicalResourceId=None, noEcho=False):
+                responseUrl = event['ResponseURL']
+
+                print(responseUrl)
+
+                responseBody = {}
+                responseBody['Status'] = responseStatus
+                responseBody['Reason'] = 'See the details in CloudWatch Log Stream: ' + context.log_stream_name
+                responseBody['PhysicalResourceId'] = physicalResourceId or context.log_stream_name
+                responseBody['StackId'] = event['StackId']
+                responseBody['RequestId'] = event['RequestId']
+                responseBody['LogicalResourceId'] = event['LogicalResourceId']
+                responseBody['NoEcho'] = noEcho
+                responseBody['Data'] = responseData
+
+                json_responseBody = json.dumps(responseBody)
+
+                print("Response body:\n" + json_responseBody)
+
+                headers = {
+                    'content-type' : '',
+                    'content-length' : str(len(json_responseBody))
                 }
 
+                try:
+                    response = requests.put(responseUrl,
+                                            data=json_responseBody,
+                                            headers=headers)
+                    print("Status code: " + response.reason)
+                except Exception as e:
+                    print("send(..) failed executing requests.put(..): " + str(e))
 
       Runtime: python3.6
 
