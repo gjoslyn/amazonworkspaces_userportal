@@ -1,4 +1,4 @@
-Use CloudFormation to deploy. After your stack has completed executing, invoke the Lambda Function called "\<StackName\>.DeployWebsiteFunction" in order to deploy the website from this repository.
+Use CloudFormation to deploy.
 
 <td>
   <a href="https://console.aws.amazon.com/cloudformation/home?region=us-west-2#/stacks/new?stackName=WorkSpacesUserPortal&amp;templateURL=https://s3-us-west-2.amazonaws.com/debrosse-cloudformation-templates/cloudformation.yaml" target="_blank">
@@ -14,4 +14,4 @@ The website is hosted in an Amazon S3 bucket. The backend uses API Gateway, Lamb
 <img src="architecture.png">
 
 <br>
-Clean up: Remove all objects from your S3 bucket. Then delete the CloudFormation stack and all resources will be cleaned up.
+Clean up: Delete the CloudFormation stack and all resources will be cleaned up.
