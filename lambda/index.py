@@ -10,7 +10,8 @@ client = boto3.client('workspaces', region_name='us-west-2')
 ds_client = boto3.client('ds', region_name='us-west-2')
 dynamodb_client = boto3.client('dynamodb', region_name='us-west-2')
 dynamodb = boto3.resource('dynamodb')
-table = dynamodb.Table('user_cache')
+directory_cache_table = os.environ['DIRECTORY_CACHE_TABLE_NAME']
+user_cache_table = os.environ['USER_CACHE_TABLE_NAME']
 
 
 def print_debug(message_to_print):
@@ -71,7 +72,7 @@ def get_name_tag_for_directory(directoryID):
 
     print("Getting name tag for directory " + directoryID)
     tag_name = os.environ['NAME_TAG']
-    response = check_cache("directory_cache", "directory_id", directoryID)
+    response = check_cache(directory_cache_table, "directory_id", directoryID)
     print_debug(response)
     
     # If we found something in the cache, then return that instead of proceeding further.
@@ -89,7 +90,7 @@ def get_name_tag_for_directory(directoryID):
 
     if(len(tags["Tags"])<1):
         print_debug("Adding value for directory "+ directoryID +" into the cache")
-        add_to_cache("directory_cache", "directory_id", directoryID, "EMPTY_STRING")
+        add_to_cache(directory_cache_table, "directory_id", directoryID, "EMPTY_STRING")
         return ""
 
     # Get first key, value pair which matches our Key value
@@ -98,11 +99,11 @@ def get_name_tag_for_directory(directoryID):
     # If the NAME tag has not been set, it will be empty. Checking that here.
     if name:
         print_debug("Adding value for directory "+ directoryID +" into the cache")
-        add_to_cache("directory_cache", "directory_id", directoryID, name["Value"])
+        add_to_cache(directory_cache_table, "directory_id", directoryID, name["Value"])
         return name["Value"]
     else:
         print_debug("Adding value for directory "+ directoryID +" into the cache")
-        add_to_cache("directory_cache", "directory_id", directoryID, "EMPTY_STRING")
+        add_to_cache(directory_cache_table, "directory_id", directoryID, "EMPTY_STRING")
         return ""
 
 
@@ -192,7 +193,7 @@ def lambda_handler(event, context):
     if(username == ""):
         return build_error_response(username, "Provided username is invalid.")
         
-    response = check_cache("user_cache", "username", username)
+    response = check_cache(user_cache_table, "username", username)
     print_debug(response)
     
     # If we found something in the cache, then return that instead of proceeding further.
@@ -212,7 +213,7 @@ def lambda_handler(event, context):
     if(len(directories) < 1):
         result = build_error_response(username, "No WorkSpaces Found for user "+username)
         print_debug("Adding response for user "+ username +" into the cache")
-        add_to_cache("user_cache", "username", username, json.dumps(result))
+        add_to_cache(user_cache_table, "username", username, json.dumps(result))
         return result
         
     result = {
@@ -221,6 +222,6 @@ def lambda_handler(event, context):
     }
     
     print_debug("Adding response for user "+ username +" into the cache")
-    add_to_cache("user_cache", "username", username, json.dumps(result))
+    add_to_cache(user_cache_table, "username", username, json.dumps(result))
     
     return result;

@@ -132,7 +132,7 @@ Resources:
       RestApiId: !Ref RestApi
       StageName: "dev"
    
-  UserCacheDynamoDBTable:
+  DirectoryCacheDynamoDBTable:
     Type: AWS::DynamoDB::Table
     Properties:
       AttributeDefinitions:
@@ -148,7 +148,7 @@ Resources:
         AttributeName: "expiration_time"
         Enabled: true
         
-  DirectoryCacheDynamoDBTable:
+  UserCacheDynamoDBTable:
     Type: AWS::DynamoDB::Table
     Properties:
       AttributeDefinitions:
@@ -356,6 +356,8 @@ Resources:
         Variables:
           "PCM_URL_TAG": "PCM"
           "NAME_TAG": "NAME"
+          "USER_CACHE_TABLE_NAME": !Ref UserCacheDynamoDBTable
+          "DIRECTORY_CACHE_TABLE_NAME": !Ref DirectoryCacheDynamoDBTable
       Role: !GetAtt LambdaExecutionRole.Arn
       Code:
         S3Bucket: !Sub "${AWS::Region}-debrosse-lambda-artifacts"
